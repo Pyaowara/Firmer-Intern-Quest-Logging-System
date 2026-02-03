@@ -18,8 +18,6 @@ export interface ILog extends Document {
   action: string;
   userId: Types.ObjectId;
   labnumber: string[];
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const logSchema = new Schema<ILog>(
@@ -38,7 +36,6 @@ const logSchema = new Schema<ILog>(
       endpoint: {
         type: String,
         required: true,
-        trim: true,
       },
     },
     response: {
@@ -58,7 +55,6 @@ const logSchema = new Schema<ILog>(
     action: {
       type: String,
       required: true,
-      trim: true,
     },
     userId: {
       type: Schema.Types.ObjectId,
