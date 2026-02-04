@@ -60,6 +60,11 @@ const userSchema = new Schema<IUser>(
   },
 );
 
+// Indexes for query optimization
+userSchema.index({ isDel: 1 });
+userSchema.index({ code: 1 });
+userSchema.index({ isActive: 1 });
+
 const User: Model<IUser> = mongoose.model<IUser>("User", userSchema, "user");
 
 export default User;
