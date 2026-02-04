@@ -6,7 +6,7 @@ interface IRequest {
 }
 
 interface IResponse {
-  statusCode: number;
+  statusCode: string;
   message: string;
   timeMs: number;
 }
@@ -40,7 +40,7 @@ const logSchema = new Schema<ILog>(
     },
     response: {
       statusCode: {
-        type: Number,
+        type: String,
         required: true,
       },
       message: {
@@ -70,6 +70,15 @@ const logSchema = new Schema<ILog>(
     timestamps: true,
   },
 );
+
+// Indexes for query optimization
+logSchema.index({ timestamp: -1 });
+logSchema.index({ userId: 1 });
+logSchema.index({ action: 1 });
+logSchema.index({ "response.statusCode": 1 });
+logSchema.index({ "response.timeMs": 1 });
+logSchema.index({ labnumber: 1 });
+logSchema.index({ timestamp: -1, userId: 1 });
 
 const Log: Model<ILog> = mongoose.model<ILog>("Log", logSchema, "log");
 
