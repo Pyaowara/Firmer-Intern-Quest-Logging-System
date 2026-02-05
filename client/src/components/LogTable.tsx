@@ -33,39 +33,7 @@ export function LogTable() {
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const initial = getInitialFiltersFromStorage();
-  const [selectedActions, setSelectedActions] = useState<string[]>(
-    initial.selectedActions,
-  );
-  const [selectedUsers, setSelectedUsers] = useState<string[]>(
-    initial.selectedUsers,
-  );
-  const [labnumber, setLabnumber] = useState(initial.labnumber);
-  const [statusCode, setStatusCode] = useState(initial.statusCode);
-  const [minTimeMs, setMinTimeMs] = useState<number>(initial.minTimeMs);
-  const [maxTimeMs, setMaxTimeMs] = useState<number>(initial.maxTimeMs);
   const [filters, setFilters] = useState<LogQueryParams>(initial.filters);
-  const [limit, setLimit] = useState<number>(initial.filters.limit || 50);
-
-  useEffect(() => {
-    const filtersToSave = {
-      ...filters,
-      action: selectedActions.length > 0 ? selectedActions : undefined,
-      userId: selectedUsers.length > 0 ? selectedUsers : undefined,
-      labnumber: labnumber || undefined,
-      statusCode: statusCode || undefined,
-      minTimeMs,
-      maxTimeMs,
-    };
-    localStorage.setItem("logTableFilters", JSON.stringify(filtersToSave));
-  }, [
-    filters,
-    selectedActions,
-    selectedUsers,
-    labnumber,
-    statusCode,
-    minTimeMs,
-    maxTimeMs,
-  ]);
 
   useEffect(() => {
     fetchUsers()
@@ -80,6 +48,7 @@ export function LogTable() {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem("logTableFilters", JSON.stringify(filters));
     let cancelled = false;
 
     fetchLogs(filters)
@@ -180,9 +149,8 @@ export function LogTable() {
                   label: action,
                   value: action,
                 }))}
-                selected={selectedActions}
+                selected={filters.action || []}
                 onChange={(actions) => {
-                  setSelectedActions(actions);
                   handleFiltersChange({
                     action: actions.length > 0 ? actions : undefined,
                     page: 1,
@@ -196,9 +164,8 @@ export function LogTable() {
                   label: `${user.firstname} ${user.lastname})`,
                   value: user._id,
                 }))}
-                selected={selectedUsers}
+                selected={filters.userId || []}
                 onChange={(userIds) => {
-                  setSelectedUsers(userIds);
                   handleFiltersChange({
                     userId: userIds.length > 0 ? userIds : undefined,
                     page: 1,
@@ -218,10 +185,9 @@ export function LogTable() {
                 <Input
                   type="text"
                   placeholder="Search lab number..."
-                  value={labnumber}
+                  value={filters.labnumber || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setLabnumber(value);
                     handleFiltersChange({
                       labnumber: value || undefined,
                       page: 1,
@@ -236,10 +202,9 @@ export function LogTable() {
                 <Input
                   type="text"
                   placeholder="Search status code..."
-                  value={statusCode}
+                  value={filters.statusCode || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setStatusCode(value);
                     handleFiltersChange({
                       statusCode: value || undefined,
                       page: 1,
@@ -255,26 +220,20 @@ export function LogTable() {
                   <Input
                     type="number"
                     placeholder="Min"
-                    value={Number(minTimeMs).toString()}
+                    value={filters.minTimeMs?.toString() || "0"}
                     onChange={(e) => {
                       const val =
                         e.target.value === "" ? 0 : parseInt(e.target.value);
-                      setMinTimeMs(val);
-                    }}
-                    onBlur={() => {
-                      if (maxTimeMs < minTimeMs) {
-                        const temp = minTimeMs;
-                        setMinTimeMs(maxTimeMs);
-                        setMaxTimeMs(temp);
+                      const max = filters.maxTimeMs || 999999;
+                      if (max < val) {
                         handleFiltersChange({
-                          minTimeMs: maxTimeMs,
-                          maxTimeMs: temp,
+                          minTimeMs: max,
+                          maxTimeMs: val,
                           page: 1,
                         });
                       } else {
                         handleFiltersChange({
-                          minTimeMs,
-                          maxTimeMs,
+                          minTimeMs: val,
                           page: 1,
                         });
                       }
@@ -286,28 +245,22 @@ export function LogTable() {
                   <Input
                     type="number"
                     placeholder="Max"
-                    value={Number(maxTimeMs).toString()}
+                    value={filters.maxTimeMs?.toString() || "999999"}
                     onChange={(e) => {
                       const val =
                         e.target.value === ""
                           ? 999999
                           : parseInt(e.target.value);
-                      setMaxTimeMs(val);
-                    }}
-                    onBlur={() => {
-                      if (maxTimeMs < minTimeMs) {
-                        const temp = minTimeMs;
-                        setMinTimeMs(maxTimeMs);
-                        setMaxTimeMs(temp);
+                      const min = filters.minTimeMs || 0;
+                      if (val < min) {
                         handleFiltersChange({
-                          minTimeMs: maxTimeMs,
-                          maxTimeMs: temp,
+                          minTimeMs: val,
+                          maxTimeMs: min,
                           page: 1,
                         });
                       } else {
                         handleFiltersChange({
-                          minTimeMs,
-                          maxTimeMs,
+                          maxTimeMs: val,
                           page: 1,
                         });
                       }
@@ -324,12 +277,6 @@ export function LogTable() {
           size="sm"
           variant="outline"
           onClick={() => {
-            setLabnumber("");
-            setStatusCode("");
-            setMinTimeMs(0);
-            setMaxTimeMs(999999);
-            setSelectedActions([]);
-            setSelectedUsers([]);
             handleFiltersChange({
               startDate: formatDateForApi(getDefaultStartDate()),
               endDate: formatDateForApi(getDefaultEndDate()),
@@ -448,21 +395,13 @@ export function LogTable() {
                     <Input
                       type="number"
                       placeholder="limit"
-                      value={limit}
+                      value={filters.limit || 50}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1;
-                        setLimit(val);
-                      }}
-                      onBlur={() => {
+                        const val = parseInt(e.target.value) || 50;
                         handleFiltersChange({
-                          limit: limit || 50,
+                          limit: val,
                           page: 1,
                         });
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.currentTarget.blur();
-                        }
                       }}
                       className="w-20"
                       min="1"
