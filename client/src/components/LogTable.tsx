@@ -437,70 +437,77 @@ export function LogTable() {
               </Table>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between px-4 py-4 border-t">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-4 border-t">
                 <div className="text-sm text-gray-500">
                   Showing {logs.length} of {totalCount} logs (Page{" "}
                   {filters.page} of {totalPages})
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="limit"
-                    value={limit}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 1;
-                      setLimit(val);
-                    }}
-                    onBlur={() => {
-                      handleFiltersChange({
-                        limit: limit || 50,
-                        page: 1,
-                      });
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.currentTarget.blur();
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Limit:</span>
+                    <Input
+                      type="number"
+                      placeholder="limit"
+                      value={limit}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setLimit(val);
+                      }}
+                      onBlur={() => {
+                        handleFiltersChange({
+                          limit: limit || 50,
+                          page: 1,
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      className="w-20"
+                      min="1"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={filters.page === 1}
+                      onClick={() => handleFiltersChange({ page: 1 })}
+                      className="hidden sm:inline-flex"
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={filters.page === 1}
+                      onClick={() =>
+                        handleFiltersChange({ page: (filters.page || 1) - 1 })
                       }
-                    }}
-                    className="flex-1"
-                    min="1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={filters.page === 1}
-                    onClick={() => handleFiltersChange({ page: 1 })}
-                  >
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={filters.page === 1}
-                    onClick={() =>
-                      handleFiltersChange({ page: (filters.page || 1) - 1 })
-                    }
-                  >
-                    Prev
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={filters.page === totalPages}
-                    onClick={() =>
-                      handleFiltersChange({ page: (filters.page || 1) + 1 })
-                    }
-                  >
-                    Next
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={filters.page === totalPages}
-                    onClick={() => handleFiltersChange({ page: totalPages })}
-                  >
-                    Last
-                  </Button>
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={filters.page === totalPages}
+                      onClick={() =>
+                        handleFiltersChange({ page: (filters.page || 1) + 1 })
+                      }
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={filters.page === totalPages}
+                      onClick={() => handleFiltersChange({ page: totalPages })}
+                      className="hidden sm:inline-flex"
+                    >
+                      Last
+                    </Button>
+                  </div>
                 </div>
               </div>
             </>
