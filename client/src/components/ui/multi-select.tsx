@@ -89,7 +89,7 @@ export function MultiSelect({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <div className="max-h-64 overflow-auto">
           {options.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
@@ -112,7 +112,12 @@ export function MultiSelect({
                     <span className={cn(isSelected && "font-medium")}>
                       {option.label}
                     </span>
-                    {isSelected && <Check className="h-4 w-4 text-[#e51c26]" />}
+                    <div className={cn(
+                      "h-4 w-4 border-2 rounded flex items-center justify-center flex-shrink-0",
+                      isSelected ? "border-[#e51c26] bg-[#e51c26]" : "border-gray-300"
+                    )}>
+                      {isSelected && <Check className="h-3 w-3 text-white" />}
+                    </div>
                   </button>
                 );
               })}
