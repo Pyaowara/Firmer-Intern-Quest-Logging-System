@@ -1,11 +1,18 @@
-import express, { type Request, type Response, Router } from "express";
+import express, { type Response, Router } from "express";
 import mongoose from "mongoose";
 import { Log } from "../../models/index.js";
-import { formatTimestamp, getTodayDateRange, logQuerySchema, ACTION_ORDER } from "../../utils/index.js";
+import {
+  formatTimestamp,
+  getTodayDateRange,
+  logQuerySchema,
+  ACTION_ORDER,
+} from "../../utils/index.js";
+import { authMiddleware, type AuthRequest } from "../../middleware/auth.js";
 
 const router: Router = express.Router();
+router.use(authMiddleware);
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: AuthRequest, res: Response) => {
   const result = logQuerySchema.safeParse(req.query);
 
   if (!result.success) {
@@ -61,6 +68,11 @@ router.get("/", async (req: Request, res: Response) => {
       if (validUserIds.length > 0) {
         filter.userId = { $in: validUserIds };
       }
+    }
+
+    // If user level is "user", only show their own logs
+    if (req.user?.level === "user") {
+      filter.userId = new mongoose.Types.ObjectId(req.user.id);
     }
 
     // Status code filter
