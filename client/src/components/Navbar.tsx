@@ -20,7 +20,7 @@ export function Navbar() {
           className="text-xl font-semibold text-[#e51c26]"
           style={{ fontFamily: '"Bodoni Moda", serif' }}
         >
-          Log Viewer
+          Log Dashboard
         </h1>
       </div>
       <div className="flex items-center gap-4">

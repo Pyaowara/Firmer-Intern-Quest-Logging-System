@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Log, LogQueryParams, User } from "../types";
-import { fetchLogs, fetchUsers } from "../api";
+import { fetchLogs, fetchUsers, exportLogs } from "../api";
 import { ACTION_ORDER } from "../constants/actions";
 import { DateRangePicker } from "./DateRangePicker";
 import { MultiSelectFilter } from "./MultiSelectorFilter";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Download } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -25,6 +25,7 @@ import {
   getInitialFiltersFromStorage,
 } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import * as XLSX from "xlsx";
 
 export function LogTable() {
   const { user } = useAuth();
@@ -115,6 +116,58 @@ export function LogTable() {
     if (code >= 400 && code < 500) return "warning";
     if (code >= 500) return "destructive";
     return "default";
+  };
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const response = await exportLogs(filters);
+      const exportData = response.data.map((log: Log) => ({
+        Timestamp: log.timestamp,
+        Action: log.action,
+        User: log.userId
+          ? `${log.userId.firstname} ${log.userId.lastname}`
+          : "N/A",
+        Method: log.request.method,
+        Endpoint: log.request.endpoint,
+        "Status Code": log.response.statusCode,
+        Message: log.response.message,
+        "Time (ms)": log.response.timeMs,
+        "Lab Numbers": Array.isArray(log.labnumber)
+          ? log.labnumber.join(", ")
+          : "",
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      const colWidths = [
+        { wch: 20 }, // Timestamp
+        { wch: 15 }, // Action
+        { wch: 15 }, // User
+        { wch: 10 }, // Method
+        { wch: 20 }, // Endpoint
+        { wch: 10 }, // Status Code
+        { wch: 30 }, // Message
+        { wch: 10 }, // Time (ms)
+        { wch: 50 }, // Lab Numbers
+      ];
+      ws["!cols"] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Logs");
+
+      const dateStr = new Date().toISOString().split("T")[0];
+      const filename = `logs_export_${dateStr}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export logs. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -296,26 +349,38 @@ export function LogTable() {
             </div>
           </div>
         </CardContent>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            handleFiltersChange({
-              startDate: formatDateForApi(getDefaultStartDate()),
-              endDate: formatDateForApi(getDefaultEndDate()),
-              labnumber: undefined,
-              statusCode: undefined,
-              minTimeMs: 0,
-              maxTimeMs: 999999,
-              action: undefined,
-              userId: undefined,
-              page: 1,
-            });
-          }}
-          className="text-white bg-[#e51c26] hover:text-[#e51c26] hover:bg-white border border-[#e51c26]"
-        >
-          Clear All Filters
-        </Button>
+        <div className="flex gap-2 px-6 pb-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              handleFiltersChange({
+                startDate: formatDateForApi(getDefaultStartDate()),
+                endDate: formatDateForApi(getDefaultEndDate()),
+                labnumber: undefined,
+                statusCode: undefined,
+                minTimeMs: 0,
+                maxTimeMs: 999999,
+                action: undefined,
+                userId: undefined,
+                page: 1,
+              });
+            }}
+            className="text-white bg-[#e51c26] hover:text-[#e51c26] hover:bg-white border border-[#e51c26]"
+          >
+            Clear All Filters
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting || loading}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? "Exporting..." : "Export to Excel"}
+          </Button>
+        </div>
       </Card>
 
       {/* Data Table */}
@@ -375,8 +440,9 @@ export function LogTable() {
                         <Badge variant="secondary">{log.action}</Badge>
                       </TableCell>
                       <TableCell>
-                        {log.userId?.prefix} {log.userId?.firstname}{" "}
-                        {log.userId?.lastname}
+                        {log.userId
+                          ? `${log.userId.prefix} ${log.userId.firstname} ${log.userId.lastname}`
+                          : "-"}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -418,13 +484,19 @@ export function LogTable() {
                     <Input
                       type="number"
                       placeholder="limit"
-                      value={filters.limit || 50}
-                      onChange={(e) => {
+                      defaultValue={filters.limit || 50}
+                      onBlur={(e) => {
                         const val = parseInt(e.target.value) || 50;
                         handleFiltersChange({
                           limit: val,
                           page: 1,
                         });
+                        e.target.value = val.toString();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.blur();
+                        }
                       }}
                       className="w-20"
                       min="1"
