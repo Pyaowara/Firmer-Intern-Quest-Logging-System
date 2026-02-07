@@ -12,7 +12,11 @@ import { authMiddleware, type AuthRequest } from "../../middleware/auth.js";
 const router: Router = express.Router();
 router.use(authMiddleware);
 
-router.get("/", async (req: AuthRequest, res: Response) => {
+async function fetchLogsHandler(
+  req: AuthRequest,
+  res: Response,
+  isExport: boolean = false,
+) {
   const result = logQuerySchema.safeParse(req.query);
 
   if (!result.success) {
@@ -91,7 +95,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       $lte: maxTimeMs,
     };
 
-    const totalCount = await Log.countDocuments(filter);
+    const totalCount = isExport ? 0 : await Log.countDocuments(filter);
 
     // Sort
     let sortObj: Record<string, 1 | -1> = { timestamp: -1 };
@@ -115,7 +119,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
         then: idx,
       }));
 
-      logs = await Log.aggregate([
+      const pipeline: any[] = [
         { $match: filter },
         {
           $addFields: {
@@ -128,8 +132,13 @@ router.get("/", async (req: AuthRequest, res: Response) => {
           },
         },
         { $sort: { actionOrder: sortDirection } },
-        { $skip: skip },
-        { $limit: limit },
+      ];
+
+      if (!isExport) {
+        pipeline.push({ $skip: skip }, { $limit: limit });
+      }
+
+      pipeline.push(
         {
           $lookup: {
             from: "user",
@@ -141,17 +150,23 @@ router.get("/", async (req: AuthRequest, res: Response) => {
         { $unwind: "$userId" },
         { $match: { "userId.isDel": false } },
         { $project: { actionOrder: 0, "userId.password": 0 } },
-      ]);
+      );
+
+      logs = await Log.aggregate(pipeline);
     } else {
-      logs = await Log.find(filter)
+      const query = Log.find(filter)
         .populate({
           path: "userId",
           select: "-password",
           match: { isDel: false },
         })
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit);
+        .sort(sortObj);
+
+      if (!isExport) {
+        query.skip(skip).limit(limit);
+      }
+
+      logs = await query;
     }
 
     const formattedLogs = logs.map((log: any) => ({
@@ -159,23 +174,39 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       timestamp: formatTimestamp(new Date(log.timestamp)),
     }));
 
-    res.json({
-      success: true,
-      count: formattedLogs.length,
-      totalCount,
-      page,
-      limit,
-      totalPages: Math.ceil(totalCount / limit),
-      data: formattedLogs,
-    });
+    if (isExport) {
+      res.json({
+        success: true,
+        count: formattedLogs.length,
+        data: formattedLogs,
+      });
+    } else {
+      res.json({
+        success: true,
+        count: formattedLogs.length,
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+        data: formattedLogs,
+      });
+    }
   } catch (error) {
-    console.error("Error fetching logs:", error);
+    console.error(`Error ${isExport ? "exporting" : "fetching"} logs:`, error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-});
+}
+
+router.get("/", (req: AuthRequest, res: Response) =>
+  fetchLogsHandler(req, res, false),
+);
+
+router.get("/export", (req: AuthRequest, res: Response) =>
+  fetchLogsHandler(req, res, true),
+);
 
 export default router;
