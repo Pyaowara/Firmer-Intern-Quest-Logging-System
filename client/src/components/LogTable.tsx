@@ -24,8 +24,10 @@ import {
   parseDateFromApi,
   getInitialFiltersFromStorage,
 } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function LogTable() {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -158,22 +160,43 @@ export function LogTable() {
                 }}
                 placeholder="Select actions to filter..."
               />
-              <MultiSelectFilter
-                label="User Filter"
-                options={users.map((user) => ({
-                  label: `${user.firstname} ${user.lastname})`,
-                  value: user._id,
-                }))}
-                selected={filters.userId || []}
-                onChange={(userIds) => {
-                  handleFiltersChange({
-                    userId: userIds.length > 0 ? userIds : undefined,
-                    page: 1,
-                  });
-                }}
-                placeholder="Select users to filter..."
-                loading={usersLoading}
-              />
+              {user?.level === "admin" && (
+                <MultiSelectFilter
+                  label="User Filter"
+                  options={users.map((u) => ({
+                    label: `${u.firstname} ${u.lastname}`,
+                    value: u._id,
+                  }))}
+                  selected={filters.userId || []}
+                  onChange={(userIds) => {
+                    handleFiltersChange({
+                      userId: userIds.length > 0 ? userIds : undefined,
+                      page: 1,
+                    });
+                  }}
+                  placeholder="Select users to filter..."
+                  loading={usersLoading}
+                />
+              )}
+              {user?.level === "user" && (
+                <MultiSelectFilter
+                  label="User Filter"
+                  options={[{
+                    label: `${user.firstname} ${user.lastname}`,
+                    value: user.id,
+                  }]}
+                  selected={filters.userId || []}
+                  onChange={(userIds) => {
+                    handleFiltersChange({
+                      userId: userIds.length > 0 ? userIds : undefined,
+                      page: 1,
+                    });
+                  }}
+                  placeholder={`${user.firstname} ${user.lastname}`}
+                  loading={usersLoading}
+                  disabled={true}
+                />
+              )}
             </div>
 
             {/* Text and Number Filters */}
