@@ -1,10 +1,10 @@
-import express, { type Request, type Response } from "express";
+import express, { type Request, type Response, Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { User } from "../../models/index.js";
 import { authMiddleware, type AuthRequest } from "../../middleware/auth.js";
 
-const router = express.Router();
+const router: Router = express.Router();
 const JWT_SECRET = "firmer-intern-quest-logging-secret-key";
 
 router.post("/login", async (req: Request, res: Response): Promise<void> => {
