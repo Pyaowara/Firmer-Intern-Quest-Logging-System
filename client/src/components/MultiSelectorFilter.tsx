@@ -7,6 +7,7 @@ interface MultiSelectFilterProps {
   onChange: (selected: string[]) => void;
   placeholder?: string;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 export function MultiSelectFilter({
@@ -16,6 +17,7 @@ export function MultiSelectFilter({
   onChange,
   placeholder = "Select items...",
   loading = false,
+  disabled = false,
 }: MultiSelectFilterProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -33,6 +35,7 @@ export function MultiSelectFilter({
           onChange={onChange}
           placeholder={placeholder}
           className="max-w-md"
+          disabled={disabled}
         />
       )}
     </div>
