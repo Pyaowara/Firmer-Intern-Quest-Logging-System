@@ -1,12 +1,11 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ]
+    "buildCommand": "cd client && pnpm install && pnpm run build",
+    "outputDirectory": "client/dist",
+    "installCommand": "cd server && pnpm install",
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api"
+        }
+    ]
 }

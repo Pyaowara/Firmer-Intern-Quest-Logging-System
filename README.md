@@ -1,6 +1,7 @@
 # Firmer Intern Quest Logging System
 
 A web-based logging system for tracking activities with user authentication.
+
 **Branch for evaluation:** `main`
 
 ## Tech Stack
