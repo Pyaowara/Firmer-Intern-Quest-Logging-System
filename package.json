@@ -1,0 +1,10 @@
+{
+    "name": "firmer-intern-quest-logging-system",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "build": "cd client && pnpm install && pnpm run build",
+        "install:server": "cd server && pnpm install"
+    },
+    "packageManager": "pnpm@9.0.0"
+}
