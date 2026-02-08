@@ -1,0 +1,50 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: firmer-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: firmer
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./resource:/data/db
+      - ./docker-init-mongo:/docker-entrypoint-initdb.d:ro
+    networks:
+      - firmer-network
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: firmer-backend
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - MONGO_URL=mongodb://mongodb:27017/firmer
+      - CLIENT_URL=http://frontend:5173
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - firmer-network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: firmer-frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_PATH=http://backend:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - firmer-network
+
+networks:
+  firmer-network:
+    driver: bridge
