@@ -1,6 +1,9 @@
 import type { LogQueryParams, LogResponse, UserResponse } from "./types";
 
-const API_BASE = "/api";
+const API_BASE = import.meta.env.VITE_API_PATH
+  ? `${import.meta.env.VITE_API_PATH}/api`
+  : "/api";
+
 
 export async function login(username: string, password: string) {
   const response = await fetch(`${API_BASE}/auth/login`, {
