@@ -1,7 +1,12 @@
 # Firmer Intern Quest Logging System
 
 A web-based logging system for tracking activities with user authentication.
+
 **Branch for evaluation:** `main`
+
+## Deployment URLs
+- **Frontend**: https://firmer-intern-quest-logging-system.vercel.app/
+- **Backend**: https://firmer-intern-quest-logging-system-snowy.vercel.app/
 
 ## Tech Stack
 
